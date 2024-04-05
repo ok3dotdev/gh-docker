@@ -2,8 +2,7 @@ name: Deploy Next.js application
 
 on:
   push:
-    branches:
-      - deploy-with-docker-lighsail
+    branches: ['main']
 
 jobs:
   deploy:
