@@ -5,17 +5,32 @@ on:
     branches: ['main']
 
 jobs:
+  build:
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        node-version: [20.11.0]
+    steps:
+      - name: checkout source
+        uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - name: Create .env file
+        run: echo "TEST_VAR=${{ secrets.TEST_VAR }}" >> .env
+      - name: Build docker image
+        run: docker build -t gha-docker .
+
   deploy:
     runs-on: self-hosted
     strategy:
       matrix:
         node-version: [20.11.0]
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build --if-present
+      - name: Delete old container
+        run: |
+          docker rm -f gh-container || true
+      - name: Run docker container
+        run: docker run -d -p 3005:3005 --name gh-container gha-docker
